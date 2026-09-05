@@ -4,9 +4,9 @@
 
 ## Colab 入口
 
-在 Colab 打开 [notebooks/Video_Caption_Prelabel_All_in_Colab.ipynb](notebooks/Video_Caption_Prelabel_All_in_Colab.ipynb)。首次运行会：
+在 Colab 打开 [notebooks/Video_Caption_Prelabel_All_in_Colab.ipynb](notebooks/Video_Caption_Prelabel_All_in_Colab.ipynb)。由于仓库是私有的，首次打开时需要由仓库所有者授权 Colab 读取该仓库；Notebook 本身已嵌入运行所需的源码快照，不需要在 Colab 中再提供 GitHub Token 或执行私有仓库克隆。首次运行会：
 
-1. 克隆本仓库并安装运行依赖；
+1. 将内嵌源码展开到 Colab 的 `/content` 并安装运行依赖；
 2. 上传私有 `input_videos.zip`；
 3. 从 Colab Secret `DASHSCOPE_API_KEY` 取得临时 API Key；
 4. 先试跑 2 条；

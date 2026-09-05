@@ -21,7 +21,9 @@ def fmt_ms(value: int) -> str:
 def fields_for(item: dict[str, Any]) -> dict[str, str]:
     fields: dict[str, str] = {}
     overview = item.get("overview") or {}
-    for key in ("visual_style_en", "scene_summary_en", "narrative_theme_en"):
+    # `scene_summary_en` remains available in the fused semantic record, but
+    # the annotation tool's Overview schema intentionally has only four fields.
+    for key in ("visual_style_en", "narrative_theme_en"):
         if isinstance(overview.get(key), str) and overview[key].strip():
             fields["overview." + key.removesuffix("_en")] = overview[key]
     for person in item.get("characters") or []:
@@ -66,28 +68,35 @@ def call_translate(fields: dict[str, str], timeout: int = 120) -> tuple[dict[str
 
 
 def render_zh(item: dict[str, Any], translated: dict[str, str]) -> str:
-    overview = item.get("overview") or {}
-    lines = ["## 概览", "", "整体视觉风格：", translated.get("overview.visual_style", "待翻译"), "",
-             "场景摘要：", translated.get("overview.scene_summary", "待翻译"), "",
-             "整体音频风格：", "本次未使用音频理解模型，待人工试听。", "",
-             "叙事主题：", translated.get("overview.narrative_theme", "待翻译"), "", "人物概况："]
+    overview_lines = ["## 概览", "", "整体视觉风格：", translated.get("overview.visual_style", "待翻译"), "",
+                      "整体音频风格：", "本次未使用音频理解模型，待人工试听。", "",
+                      "人物档案："]
     for person in item.get("characters") or []:
         pid = person.get("person_id", "unknown_person")
-        lines.append(f"- {pid}：{translated.get(f'character.{pid}.description', '待翻译')}")
-    lines.extend(["", "## 故事线", ""])
+        overview_lines.append(f"- {pid}：{translated.get(f'character.{pid}.description', '待翻译')}")
+    if not item.get("characters"):
+        overview_lines.append("- 未生成人物档案。")
+    overview_lines.extend(["", "叙事主题：", translated.get("overview.narrative_theme", "待翻译")])
+
+    storyline_lines = ["## 故事线", ""]
     for event in item.get("storyline") or []:
         eid = event.get("event_id")
-        lines.extend([f"{fmt_ms(event['start_ms'])} - {fmt_ms(event['end_ms'])}",
-                      translated.get(f"storyline.{eid}.text", "待翻译"), ""])
-    lines.extend(["## 语音转录", ""])
+        storyline_lines.extend([f"{fmt_ms(event['start_ms'])} - {fmt_ms(event['end_ms'])}",
+                                translated.get(f"storyline.{eid}.text", "待翻译"), ""])
+    if not item.get("storyline"):
+        storyline_lines.append("暂无故事线描述。")
+
+    speech_lines = ["## 语音转录", ""]
     for speech in item.get("speech") or []:
-        lines.extend([f"{fmt_ms(speech['start_ms'])} - {fmt_ms(speech['end_ms'])}",
-                      "说话人：待人工确认", "状态：本次未使用音频理解模型，待人工试听。",
-                      f"内容：{json.dumps(speech.get('text',''), ensure_ascii=False)}", ""])
+        speech_lines.extend([f"{fmt_ms(speech['start_ms'])} - {fmt_ms(speech['end_ms'])}",
+                             "说话人：待人工确认", "状态：本次未使用音频理解模型，待人工试听。",
+                             f"内容：{json.dumps(speech.get('text',''), ensure_ascii=False)}", ""])
     if not item.get("speech"):
-        lines.append("语音是否存在及其内容待人工确认。")
-    lines.extend(["## 可见文字", "", "本次未评估可见文字。"])
-    return "\n".join(lines)
+        speech_lines.append("语音是否存在及其内容待人工确认。")
+    visible_text_lines = ["## 可见文字", "", "本次未评估可见文字。"]
+    return "\n\n".join("\n".join(section).rstrip() for section in (
+        overview_lines, storyline_lines, speech_lines, visible_text_lines
+    ))
 
 
 def main() -> None:

@@ -76,11 +76,10 @@ def visual_payload(item: dict[str, Any], input_root: Path, prompt: str, max_fram
 def render_en(item: dict[str, Any], visual: dict[str, Any], asr: dict[str, Any] | None) -> str:
     ov = visual.get("overview", {})
     out = ["## Overview", "", "Overall Visual Style:", str(ov.get("visual_style_en") or "Unknown."), "",
-           "Overall Audio Style:", "Audio not assessed by the visual model.", "", "Narrative Theme:",
-           str(ov.get("narrative_theme_en") or "Unknown."), "", "Character Profiles:"]
+           "Overall Audio Style:", "Audio not assessed by the visual model.", "", "Character Profiles:"]
     for p in visual.get("characters", []):
         out.append(f"- {p.get('person_id')}: {p.get('description_en') or 'Unknown.'}")
-    out += ["", "## Storyline", ""]
+    out += ["", "Narrative Theme:", str(ov.get("narrative_theme_en") or "Unknown."), "", "## Storyline", ""]
     byid = {s["shot_id"]: s for s in item["shots"]}
     for event in visual.get("storyline", []):
         shot = byid.get(event.get("shot_id"))
@@ -88,7 +87,7 @@ def render_en(item: dict[str, Any], visual: dict[str, Any], asr: dict[str, Any] 
         out += [f"{shot['start_ms']//60000:02d}:{(shot['start_ms']//1000)%60:02d}.{shot['start_ms']%1000:03d} - "
                 f"{shot['end_ms']//60000:02d}:{(shot['end_ms']//1000)%60:02d}.{shot['end_ms']%1000:03d}",
                 event.get("text_en") or "Unknown.", ""]
-    out += ["## Speech Transcript", ""]
+    out += ["", "## Speech Transcript", ""]
     speech = (asr or {}).get("segments", [])
     if speech:
         for u in speech:
@@ -97,7 +96,7 @@ def render_en(item: dict[str, Any], visual: dict[str, Any], asr: dict[str, Any] 
                     f"Content: {json.dumps(u.get('text',''), ensure_ascii=False)}", ""]
     else:
         out.append("No ASR result is available yet.")
-    out += ["## Visible Text", "", "Visible text was not assessed in this run."]
+    out += ["", "## Visible Text", "", "Visible text was not assessed in this run."]
     return "\n".join(out)
 
 def main() -> None:

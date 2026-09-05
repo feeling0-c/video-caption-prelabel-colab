@@ -100,50 +100,53 @@ def render_markdown(item: dict[str, Any], visual: dict[str, Any], speech: list[d
     characters = visual.get("characters") or []
     storyline = visual.get("storyline") or []
     shot_by_id = {s["shot_id"]: s for s in item.get("shots", [])}
-    lines = [
+    overview_lines = [
         "## Overview", "", "Overall Visual Style:",
         clean_text(overview.get("visual_style_en")), "",
-        "Scene Summary:", clean_text(overview.get("scene_summary_en"), "Not provided."), "",
         "Overall Audio Style:",
         "Audio was not assessed by the visual model.", "",
-        "Narrative Theme:", clean_text(overview.get("narrative_theme_en")), "",
         "Character Profiles:",
     ]
     if characters:
         for person in characters:
             person_id = clean_text(person.get("person_id"), "unknown_person")
             desc = clean_text(person.get("description_en"))
-            lines.append(f"- {person_id}: {desc}")
+            overview_lines.append(f"- {person_id}: {desc}")
     else:
-        lines.append("- No character profile was generated.")
+        overview_lines.append("- No character profile was generated.")
+    overview_lines.extend(["", "Narrative Theme:", clean_text(overview.get("narrative_theme_en"))])
 
-    lines.extend(["", "## Storyline", ""])
+    storyline_lines = ["## Storyline", ""]
+    rendered_storyline = False
     if storyline:
         for event in storyline:
             shot = shot_by_id.get(event.get("shot_id"))
             if not shot:
                 continue
-            lines.extend([
+            rendered_storyline = True
+            storyline_lines.extend([
                 f"{fmt_ms(shot['start_ms'])} - {fmt_ms(shot['end_ms'])}",
                 clean_text(event.get("text_en")), "",
             ])
-    else:
-        lines.append("No storyline description is available.")
+    if not rendered_storyline:
+        storyline_lines.append("No storyline description is available.")
 
-    lines.extend(["## Speech Transcript", ""])
+    speech_lines = ["## Speech Transcript", ""]
     if speech:
         for segment in speech:
-            lines.extend([
+            speech_lines.extend([
                 f"{fmt_ms(segment['start_ms'])} - {fmt_ms(segment['end_ms'])}",
                 "Speaker: unknown (not linked to a visible person)",
                 "State: not assessed by an audio-capable model",
                 f"Content: {json.dumps(segment.get('text', ''), ensure_ascii=False)}", "",
             ])
     else:
-        lines.append("No ASR speech segment is available.")
+        speech_lines.append("No ASR speech segment is available.")
 
-    lines.extend(["## Visible Text", "", "Visible text was not assessed in this run."])
-    return "\n".join(lines)
+    visible_text_lines = ["## Visible Text", "", "Visible text was not assessed in this run."]
+    return "\n\n".join("\n".join(section).rstrip() for section in (
+        overview_lines, storyline_lines, speech_lines, visible_text_lines
+    ))
 
 
 def fuse(item: dict[str, Any], visual_file: Path, asr_file: Path) -> tuple[dict[str, Any], list[str]]:

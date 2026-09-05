@@ -2,6 +2,7 @@
 runs/
 data/
 outputs/
+artifacts/
 *.mp4
 *.MP4
 *.wav
@@ -16,4 +17,7 @@ outputs/
 .deps/
 __pycache__/
 *.py[cod]
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
 .ipynb_checkpoints/

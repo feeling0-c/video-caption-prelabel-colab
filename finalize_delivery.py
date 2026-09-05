@@ -14,6 +14,9 @@ from typing import Any
 
 SECTIONS_EN = ("Overview", "Storyline", "Speech Transcript", "Visible Text")
 SECTIONS_ZH = ("概览", "故事线", "语音转录", "可见文字")
+OVERVIEW_FIELDS_EN = ("Overall Visual Style:", "Overall Audio Style:",
+                      "Character Profiles:", "Narrative Theme:")
+OVERVIEW_FIELDS_ZH = ("整体视觉风格：", "整体音频风格：", "人物档案：", "叙事主题：")
 ID_RE = re.compile(r"^[A-Za-z0-9_-]+$")
 
 
@@ -46,6 +49,28 @@ def has_sections(text: Any, sections: tuple[str, ...]) -> bool:
     return all(re.search(rf"(?im)^##[ \t]+{re.escape(s)}[ \t]*$", text) for s in sections)
 
 
+def strict_caption_schema(text: Any, sections: tuple[str, ...], overview_fields: tuple[str, ...]) -> bool:
+    """Validate the exact Markdown contract required by the annotation tool."""
+    if not has_sections(text, sections):
+        return False
+    headings = tuple(re.findall(r"(?m)^##[ \t]+(.+?)[ \t]*$", text))
+    if headings != sections:
+        return False
+    if any(f"\n\n## {section}" not in text for section in sections[1:]):
+        return False
+    overview_match = re.search(
+        rf"(?ms)^##[ \t]+{re.escape(sections[0])}[ \t]*\n(.*?)^##[ \t]+{re.escape(sections[1])}[ \t]*$",
+        text,
+    )
+    if not overview_match:
+        return False
+    labels = tuple(
+        line.strip() for line in overview_match.group(1).splitlines()
+        if line.strip().endswith((":", "："))
+    )
+    return labels == overview_fields
+
+
 def valid_interval(start: Any, end: Any, duration: int) -> bool:
     try:
         return 0 <= int(start) < int(end) <= duration
@@ -73,13 +98,13 @@ def validate(item: dict[str, Any], translation: dict[str, Any] | None,
         issues.append("video_missing")
     if rel is None:
         issues.append("video_path_missing")
-    if not has_sections(item.get("caption_en"), SECTIONS_EN):
-        issues.append("english_sections_incomplete")
+    if not strict_caption_schema(item.get("caption_en"), SECTIONS_EN, OVERVIEW_FIELDS_EN):
+        issues.append("english_caption_schema_invalid")
     if not translation:
         issues.append("translation_missing")
     cn = (translation or {}).get("caption_zh") or (translation or {}).get("cn")
-    if not has_sections(cn, SECTIONS_ZH):
-        issues.append("chinese_sections_incomplete")
+    if not strict_caption_schema(cn, SECTIONS_ZH, OVERVIEW_FIELDS_ZH):
+        issues.append("chinese_caption_schema_invalid")
     if item.get("validation", {}).get("schema_valid") is False:
         issues.append("fused_schema_invalid")
     if not allow_unresolved:

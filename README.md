@@ -4,7 +4,7 @@
 
 ## Colab 入口
 
-在 Colab 打开 [notebooks/Video_Caption_Prelabel_All_in_Colab.ipynb](notebooks/Video_Caption_Prelabel_All_in_Colab.ipynb)。由于仓库是私有的，首次打开时需要由仓库所有者授权 Colab 读取该仓库；Notebook 本身已嵌入运行所需的源码快照，不需要在 Colab 中再提供 GitHub Token 或执行私有仓库克隆。首次运行会：
+在 Colab 打开 [notebooks/Video_Caption_Prelabel_All_in_Colab.ipynb](notebooks/Video_Caption_Prelabel_All_in_Colab.ipynb)。Notebook 已嵌入运行所需的源码快照，不需要在 Colab 中提供 GitHub Token 或执行仓库克隆。首次运行会：
 
 1. 将内嵌源码展开到 Colab 的 `/content` 并安装运行依赖；
 2. 上传私有 `input_videos.zip`；
@@ -65,6 +65,14 @@ JSONL 的每条正式导入记录仅含：
 {"_id":"...","video_path":"...","caption_en":"...","caption_zh":"..."}
 ```
 
+其中 Overview 不是自由 Markdown。为兼容标注工具，英文必须严格使用 `Overall Visual Style`、`Overall Audio Style`、`Character Profiles`、`Narrative Theme` 这四个字段及该顺序；中文对应为 `整体视觉风格`、`整体音频风格`、`人物档案`、`叙事主题`。`finalize_delivery.py` 会在打包前校验这个契约，避免把“可读但无法导入”的文件交付出去。
+
+历史包可用以下本地命令修复；它不读取视频、不调用模型，也不会覆盖输入文件：
+
+```powershell
+python normalize_tool_jsonl.py --input .\old_final_caption_zh.jsonl --output .\fixed_final_caption_zh.jsonl
+```
+
 ## 数据与安全边界
 
 - `.gitignore` 明确排除视频、帧、音频、运行输出、ZIP、`.env` 与密钥；仓库只提交代码和文档。
@@ -81,6 +89,7 @@ qwen_api.py                # Qwen 视觉预标注
 fuse_results.py            # 结构、ID、时间戳的确定性融合
 translate_fields.py        # 字段级中文翻译
 finalize_delivery.py       # 严格校验和导入包生成
+normalize_tool_jsonl.py    # 历史 JSONL 的本地 schema 修复器
 run_colab_pipeline.py      # 以上各步骤的一键编排
 notebooks/                 # 可直接在 Colab 打开的入口
 ```

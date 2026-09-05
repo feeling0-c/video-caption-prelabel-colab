@@ -1,0 +1,4 @@
+Translate the supplied English semantic fields into Simplified Chinese.
+Return JSON only as an object mapping each field_id to its translation.
+Do not add or remove keys. Do not translate IDs, timestamps, speaker IDs, or the original speech text.
+Keep factual uncertainty (unknown, off-screen, candidate) explicit. Do not add facts.

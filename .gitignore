@@ -1,0 +1,19 @@
+# Private inputs and generated artifacts
+runs/
+data/
+outputs/
+*.mp4
+*.MP4
+*.wav
+*.jpg
+*.jpeg
+*.zip
+
+# Secrets and local runtime state
+.env
+.env.*
+*.key
+.deps/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
